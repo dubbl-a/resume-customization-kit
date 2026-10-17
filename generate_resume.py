@@ -8,6 +8,12 @@ Usage:
     python3 generate_resume.py content.json "Your Name Resume MM.DD.YYYY Company Role.docx"
     python3 generate_resume.py content.json "Output.docx" --pages 1    # one-page resume
     python3 generate_resume.py content.json "Output.docx" --no-pdf     # .docx only
+    python3 generate_resume.py content.json "Output.docx" --outdir output --md
+
+--outdir DIR writes the .docx, PDF and page check into DIR (created if missing;
+default: this script's folder). --md also writes <output>.md beside the .docx, a
+plain Markdown mirror (name, contact and links from the master's header table)
+for pasting into ATS text boxes; **bold** markers are kept.
 
 After exporting the PDF (Word first, LibreOffice as fallback) the script counts
 its pages and exits 1 unless the count matches --pages (default 2), or if no PDF
@@ -393,6 +399,91 @@ def update_headline_in_place(doc, headline):
         br_parent_r.addprevious(new_r)
     else:
         p.append(new_r)
+
+
+def header_lines(doc):
+    """Name, contact and links text from the master's header table (see
+    update_headline_in_place for the cell layout). Missing parts come back empty."""
+    paras = doc.tables[0].rows[0].cells[0].paragraphs
+    name = paras[0].text.strip() if len(paras) > 0 else ""
+    contact = ""
+    if len(paras) > 1:
+        parts = paras[1].text.split("\n", 1)
+        contact = parts[1].strip() if len(parts) > 1 else ""
+    links = links_markdown(doc, paras[2]) if len(paras) > 2 else ""
+    return name, contact, links
+
+
+def links_markdown(doc, para):
+    """The links paragraph as text, with each hyperlink written as [text](url)
+    (a bare URL when the text is the URL), so the mirror keeps the targets."""
+    def run_text(el):
+        return "".join(t.text or "" for t in el.iter(qn('w:t')))
+
+    out = []
+    for child in para._p:
+        if child.tag == qn('w:r'):
+            out.append(run_text(child))
+        elif child.tag == qn('w:hyperlink'):
+            text = run_text(child)
+            rid = child.get(qn('r:id'))
+            rel = doc.part.rels.get(rid) if rid else None
+            url = rel.target_ref if rel is not None else ""
+            if not url or text.strip() == url:
+                out.append(text or url)
+            else:
+                out.append(f"[{text}]({url})")
+    return "".join(out).strip()
+
+
+MD_LINE_START_RE = re.compile(r"^(?:([#>])|([-+*])(?= )|(\d+)([.)])(?= ))")
+
+
+def md_escape(text):
+    """
+    Backslash-escape a Markdown-significant line start so the text stays literal:
+    a leading # or >, a -, + or * followed by a space, or a "1." / "1)" list
+    marker (the backslash goes before the punctuation). ** bold is left alone.
+    """
+    def fix(m):
+        if m.group(3):
+            return f"{m.group(3)}\\{m.group(4)}"
+        return "\\" + (m.group(1) or m.group(2))
+    return MD_LINE_START_RE.sub(fix, text)
+
+
+def write_md(content, header, path):
+    """Plain Markdown mirror of the resume for ATS paste boxes. ** stays as bold."""
+    name, contact, links = header
+    contact, links = md_escape(contact), md_escape(links)
+    L = []
+    if name:
+        L += [f"# {name}", ""]
+    if contact:
+        L += [contact, ""]
+    if links:
+        L += [links, ""]
+    if content.get("headline"):
+        L += [f"**{content['headline']}**", ""]
+    if content.get("summary"):
+        L += ["## Summary", "", md_escape(content["summary"]), ""]
+    L += ["## Experience"]
+    for role in content.get("experience", []):
+        loc = role.get("location", "")
+        L.append("")
+        if role.get("company"):
+            L.append(f"### {role['company']}" + (f" | {loc}" if loc else ""))
+        L.append(f"*{role.get('title', '')}* | {role.get('dates', '')}")
+        if role.get("bullets"):
+            L.append("")
+            L += [f"- {md_escape(b)}" for b in role["bullets"]]
+    if content.get("skills"):
+        L += ["", "## Skills", ""]
+        L += [f"- **{s.get('header', '')}**: {s.get('items', '')}" for s in content["skills"]]
+    if content.get("education"):
+        L += ["", "## Education", "", md_escape(content["education"])]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(L) + "\n")
 
 
 # ── Section builders ──────────────────────────────────────────────────────────
@@ -797,6 +888,10 @@ def main():
                         help="required PDF page count (default: 2); exit 1 on mismatch")
     parser.add_argument("--no-pdf", action="store_true",
                         help="write the .docx only; skip PDF export and the page check")
+    parser.add_argument("--outdir", metavar="DIR", default=OUTPUT_DIR,
+                        help="folder for the .docx, PDF and .md (created if missing; a relative path is resolved against the current directory; default: the script's folder)")
+    parser.add_argument("--md", action="store_true",
+                        help="also write <output>.md beside the .docx, a plain Markdown mirror for ATS paste boxes")
     args = parser.parse_args()
 
     content_path = args.content
@@ -828,6 +923,8 @@ def main():
     # Kill auto-hyphenation inherited from MASTER settings
     disable_auto_hyphenation(doc)
 
+    header = header_lines(doc)
+
     # Update only the headline text — leave name, contact, links untouched
     update_headline_in_place(doc, content.get("headline", ""))
 
@@ -841,7 +938,8 @@ def main():
 
     if not output_name.lower().endswith(".docx"):
         output_name += ".docx"
-    output_path = os.path.join(OUTPUT_DIR, output_name)
+    os.makedirs(args.outdir, exist_ok=True)
+    output_path = os.path.join(args.outdir, output_name)
 
     # Swap Word-bundled Garamond for EB Garamond (installed system font) so that
     # both the DOCX and the LibreOffice-generated PDF use the same font.
@@ -851,6 +949,11 @@ def main():
 
     doc.save(output_path)
     print(f"✓ Saved: {output_path}")
+
+    if args.md:
+        md_path = os.path.splitext(output_path)[0] + ".md"
+        write_md(content, header, md_path)
+        print(f"✓ Saved: {md_path}")
 
     if args.no_pdf:
         print("⚠ PDF export and page check skipped (--no-pdf).")

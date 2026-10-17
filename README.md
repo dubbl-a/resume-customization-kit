@@ -129,6 +129,8 @@ Output files are named: `Your Name Resume MM.DD.YYYY Company Role.docx`
 
 - **Let the page check do the counting.** After exporting the PDF, `generate_resume.py` counts its pages and exits 1 unless there are exactly 2 (`⚠ Page count: 3 (expected 2)`). It also exits 1 if no PDF could be produced, so an unverified run never looks like a pass. Use `--pages 1` for a one-page resume, or `--no-pdf` to write only the `.docx` and skip the check.
 
+- **Write output to its own folder.** `--outdir DIR` (for example `--outdir output/`) puts the `.docx`, PDF and page check in `DIR`, creating it if missing (a relative path is resolved against the current directory); the default is the script's folder. Recommended: a generated filename containing "MASTER" (such as "Mastercard") next to the script makes master auto-detection ambiguous. `--md` also writes `<output>.md` beside the `.docx`, a plain Markdown mirror (name, contact, links, then the resume, with `**bold**` kept) for pasting into ATS text boxes.
+
 - **Verify every output visually.** Claude checks page count automatically, but render the PDF and scan for fill quality before sending. A resume that fits 2 pages but only fills 75% of the second page looks unfinished.
 - **Keep your real files out of git.** The `.gitignore` in this repo excludes `*.docx`, `*.pdf`, `resume_content_*.json`, and your personal instruction files. Your actual resume files stay private.
 
