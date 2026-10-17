@@ -15,9 +15,12 @@ This folder generates tailored resumes from a master bullet bank. When a job des
 | `build_master.py` | Writes a starter `master_resume.docx` with the structure the generator needs, for users without their own master |
 | `trace_check.py` | Fabrication check: every number in a content JSON must appear in `master_resume_bullets.md` |
 | `score_keywords.py` | Optional report: weighted job-description term coverage of a content JSON, plus the share of bullets with a figure |
+| `smoke_test.py` | Dev check: runs every script on a sample resume in a temp directory and prints ✓/✗. `python3 smoke_test.py`; `--pdf` also tests PDF export (may open Word or LibreOffice) |
 | `requirements_[company].json` | Optional, per role: weighted terms extracted from the job description (see `requirements_example.json`) |
 | `master_resume.docx` (or one `*MASTER*.docx`) | Style template — fonts, margins, and formatting are inherited from this file |
 | `resume_content_[company].json` | Generated per role; contains headline, summary, experience, skills, education |
+
+After changing any script, run `python3 smoke_test.py` and fix every ✗ before finishing.
 
 ---
 
