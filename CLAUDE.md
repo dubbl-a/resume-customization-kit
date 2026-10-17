@@ -10,7 +10,7 @@ This folder generates tailored resumes from a master bullet bank. When a job des
 |---|---|
 | `master_resume_bullets.md` | Single source of truth for all bullets, organized by role, with verified metrics |
 | `resume_instructions.md` | Full customization playbook: role families, headline/summary formulas, bullet selection logic, role inclusion rules |
-| `tiering_instructions.md` | Job evaluation framework (use when asked to tier a role before generating) |
+| `tiering_instructions.md` | Optional. Job evaluation framework (use when asked to tier a role before generating). Created from `tiering_instructions_template.md` |
 | `generate_resume.py` | Converts a JSON content file into a formatted `.docx` using the master resume as a style template |
 | `build_master.py` | Writes a starter `master_resume.docx` with the structure the generator needs, for users without their own master |
 | `trace_check.py` | Fabrication check: every number in a content JSON must appear in `master_resume_bullets.md` |
@@ -110,11 +110,12 @@ To use this workflow with your own resume:
 1. **Build your `master_resume_bullets.md`** — list every role with verified, metrics-backed bullets. This is the most important file. Do not include anything you cannot verify.
 2. **Write your `resume_instructions.md`** — define your role families, headline formulas, bullet selection priorities, and role inclusion rules. See the existing file as a reference.
 3. **Add your master `.docx`** — no script edits needed. If you don't have one, run `python3 build_master.py --name "..." --contact "..." --links "..."` to write a starter `master_resume.docx` with the required structure (add `--force` to overwrite an existing one). `generate_resume.py` uses the first match of: the `MASTER_RESUME` environment variable (full path), then `master_resume.docx` in this folder, then exactly one `*MASTER*.docx` in this folder (Word `~$` lock files are ignored). It stops with an error if none is found or several `*MASTER*.docx` files match. The master must define the paragraph styles `Body A`, `Section Title` and `List Paragraph` (bullets use the list attached to `List Paragraph`, else numId 2), and start with a header table whose first cell holds the name, then headline + line break + contact, then links. The script checks this before building and names anything missing.
-4. **Install dependencies:**
+4. **Optional: write your `tiering_instructions.md`** — copy `tiering_instructions_template.md` and fill in your hard filters, soft signals, and tier thresholds. Only used when you ask to tier a role.
+5. **Install dependencies:**
    ```
    pip install -r requirements.txt
    ```
-5. Open Claude Code in this folder and paste any job description to generate a resume.
+6. Open Claude Code in this folder and paste any job description to generate a resume.
 
 ---
 

@@ -65,6 +65,14 @@ cp master_resume_bullets_template.md master_resume_bullets.md
 
 Then edit both files to reflect your own career, rules, and preferences. See the templates for guidance on what each section should contain.
 
+Optionally, add a job evaluation framework so Claude can tier a role (apply, skip, or verify first) before generating anything:
+
+```bash
+cp tiering_instructions_template.md tiering_instructions.md
+```
+
+Skip this if you want every job description to go straight to a resume.
+
 ### 4. Install Claude Code
 
 If you haven't already: [claude.ai/code](https://claude.ai/code)
@@ -106,6 +114,7 @@ Output files are named: `Your Name Resume MM.DD.YYYY Company Role.docx`
 | `score_keywords.py` | Optional keyword report: `python3 score_keywords.py requirements_[company].json resume_content_[company].json` lists each weighted job-description term as hit or miss (and where it matched), the weighted coverage %, the misses by weight, and the share of bullets with a figure. Report only; always exits 0 (2 on bad input). |
 | `requirements_example.json` | Example requirements file: a title plus weighted terms (`weight` 1-3, optional `alternates`). Copy it to `requirements_[company].json`. |
 | `requirements.txt` | Python dependencies: `pip install -r requirements.txt`. |
+| `tiering_instructions_template.md` | Optional template for a job evaluation framework: hard filters, scored soft signals, tier definitions, and a verdict-first output format. Copy to `tiering_instructions.md`. |
 | `README.md` | This file. |
 
 ---
