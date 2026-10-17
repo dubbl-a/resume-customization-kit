@@ -83,6 +83,10 @@ When asked to score a resume, or before generating if the user wants a keyword c
 - Never fabricate data, metrics, or outcomes. Pull only from `master_resume_bullets.md`.
 - Summary must be exactly two sentences and must not open with "I" or the candidate's name.
 - Bold only 1–2 anchor phrases in the summary.
+- **Near-miss skills become questions.** If the job description names a skill the bank lacks but something adjacent exists, do not stop to ask first: generate from supported, verified content, leave the near-miss skill out, and do not insert it or upgrade the adjacent one. Right after delivering, ask the user whether they have real experience with it. Search the whole bank before calling anything a gap: a requirement not on the page is a selection question until the full bank has been searched. Requirements the bank cannot support go to the user in a short gap list, also right after delivering.
+- **Reword vocabulary, never the claim.** Mirroring the job description's vocabulary is fine. The claim, metric, scope, verb strength, employer names and dates stay exactly as in the bank. "Led" never becomes "built", and numbers never round up.
+- **Mirror the concept, not the sentences.** Do not lift a distinctive phrase from the posting whole, and do not borrow a negation such as "not just X" (it defends against a charge nobody made). State the work positively, in the bank's own words.
+- **Bank status tags.** A bullet may end with an optional tag. Untagged bullets are treated as `[verified]`. `[verified]` bullets are freely usable. `[unverified]` bullets are left out of the generated resume; list them right after delivering and ask the user to confirm, and once confirmed, change the tag to `[verified]` in the bank (they can then be used on the next run). `[flagged]` bullets never ship, whatever the job description asks. Never copy a tag into the content JSON.
 
 ---
 

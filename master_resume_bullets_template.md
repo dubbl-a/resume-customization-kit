@@ -7,6 +7,7 @@ This is your single source of truth. Every bullet you might ever use on a resume
 - Include every metric you can verify — percentages, dollar amounts, scale, benchmarks beaten
 - Write bullets in past tense (except your current role)
 - Keep bullet headers consistent: `**Header:** Body text.`
+- Optionally end a bullet with a status tag. `[verified]`: freely usable (an untagged bullet counts as verified). `[unverified]`: left out of generated resumes; Claude asks you to confirm it right after delivering. `[flagged]`: never ships until you resolve the flag and remove the tag. Example: `- **Header:** Body with **+30% adoption**. [unverified]`
 
 ---
 

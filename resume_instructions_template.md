@@ -142,6 +142,11 @@ Before generating, verify:
 
 - [ ] Role family classification is correct and drives the entire resume
 - [ ] No fabricated data, titles, metrics, or outcomes
+- [ ] Rewording to the job description's vocabulary changed no claim, metric, scope, verb strength, employer name or date ("Led" never became "built")
+- [ ] No distinctive phrase lifted whole from the posting, and no borrowed negation like "not just X"
+- [ ] Every near-miss skill (JD names X, bank has adjacent Y) is left out of the resume, not inserted or upgraded, and listed as a question to the user right after delivering
+- [ ] The whole bank was searched before anything was called a gap; unsupported requirements go in a short gap list for the user, given right after delivering
+- [ ] No `[flagged]` bullet used; every `[unverified]` bullet is left out and listed as a question right after delivering
 - [ ] Summary is exactly two sentences
 - [ ] Current company is listed first with correct title
 - [ ] No duplicate bullets across roles
