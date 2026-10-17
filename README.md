@@ -103,6 +103,8 @@ Output files are named: `Your Name Resume MM.DD.YYYY Company Role.docx`
 | `master_resume_bullets_template.md` | Template for your bullet bank: every role, organized by company, with verified metrics. |
 | `build_master.py` | Writes a starter `master_resume.docx` with the header table, styles and bullet list the generator needs. Use it if you don't have a master `.docx`. |
 | `trace_check.py` | Fabrication check: every number in a content JSON (headline, summary, bullets, skills) must appear in `master_resume_bullets.md`. `python3 trace_check.py resume_content_[company].json`; exit 1 lists each untraceable figure. |
+| `score_keywords.py` | Optional keyword report: `python3 score_keywords.py requirements_[company].json resume_content_[company].json` lists each weighted job-description term as hit or miss (and where it matched), the weighted coverage %, the misses by weight, and the share of bullets with a figure. Report only; always exits 0 (2 on bad input). |
+| `requirements_example.json` | Example requirements file: a title plus weighted terms (`weight` 1-3, optional `alternates`). Copy it to `requirements_[company].json`. |
 | `requirements.txt` | Python dependencies: `pip install -r requirements.txt`. |
 | `README.md` | This file. |
 

@@ -14,6 +14,8 @@ This folder generates tailored resumes from a master bullet bank. When a job des
 | `generate_resume.py` | Converts a JSON content file into a formatted `.docx` using the master resume as a style template |
 | `build_master.py` | Writes a starter `master_resume.docx` with the structure the generator needs, for users without their own master |
 | `trace_check.py` | Fabrication check: every number in a content JSON must appear in `master_resume_bullets.md` |
+| `score_keywords.py` | Optional report: weighted job-description term coverage of a content JSON, plus the share of bullets with a figure |
+| `requirements_[company].json` | Optional, per role: weighted terms extracted from the job description (see `requirements_example.json`) |
 | `master_resume.docx` (or one `*MASTER*.docx`) | Style template — fonts, margins, and formatting are inherited from this file |
 | `resume_content_[company].json` | Generated per role; contains headline, summary, experience, skills, education |
 
@@ -48,6 +50,13 @@ When a job description is dropped in:
    - `⚠ Page count: N (expected 2)` and exit 1 — the page count is wrong.
    - `⚠ PDF export failed` and exit 1 — no PDF was produced, so the page count is unverified. Never report success in this case; see PDF Troubleshooting.
 7. If page count is not 2, make one informed cut and regenerate once. See page count rules below.
+
+## Analyze / score (optional)
+
+When asked to score a resume, or before generating if the user wants a keyword check:
+1. Extract the job description's weighted terms (weight 1-3, with `alternates` for synonyms) into `requirements_[company].json`, in the format of `requirements_example.json`.
+2. Run `python3 score_keywords.py requirements_[company].json resume_content_[company].json`. It is a report only and always exits 0 (exit 2 on bad input). It lists each term as hit or miss with where it matched, the weighted coverage %, the misses by weight, and the share of bullets with a figure against the 60-75% target.
+3. A miss is measured against the page, not the bank. Search `master_resume_bullets.md` for each miss first (and its synonyms). If the bank supports it, it is a selection choice: use that bullet or skill. Only if the bank does not support it, ask the user ("The posting asks for X; I don't see it in your bank. Is there something that fits?"). Never tell the user the bank lacks something without checking, and never insert a term the bank does not support just to raise the score.
 
 ---
 

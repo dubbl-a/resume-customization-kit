@@ -16,6 +16,10 @@ output/
 resume_content_*.json
 resume_content.json
 
+# Per-role keyword requirements (the example stays tracked)
+requirements_*.json
+!requirements_example.json
+
 # Python
 __pycache__/
 *.py[cod]
