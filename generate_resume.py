@@ -645,6 +645,96 @@ def count_pdf_pages(pdf_path):
     return len(PdfReader(pdf_path).pages)
 
 
+# ── Content validation ────────────────────────────────────────────────────────
+
+KNOWN_KEYS = ("headline", "summary", "experience", "skills", "education")
+ROLE_KEYS = ("company", "title", "dates", "bullets")
+EM_DASH = "\u2014"
+
+
+def _find_em_dashes(value, path, problems):
+    """Recursively flag every string value that contains an em dash."""
+    if isinstance(value, str):
+        if EM_DASH in value:
+            problems.append(f"{path}: contains an em dash (\u2014); use a comma, "
+                            "semicolon, parentheses or an en dash (\u2013)")
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            _find_em_dashes(v, f"{path}.{k}", problems)
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            _find_em_dashes(v, f"{path}[{i}]", problems)
+
+
+def validate_content(content):
+    """
+    Check the content JSON before anything is built or written.
+    Returns (problems, warnings): lists of messages prefixed with a JSON path.
+    """
+    problems, warnings = [], []
+    if not isinstance(content, dict):
+        return ["$: top level must be a JSON object"], warnings
+
+    for key in ("headline", "summary", "education"):
+        if key not in content:
+            problems.append(f"$.{key}: missing")
+        elif not isinstance(content[key], str) or not content[key].strip():
+            problems.append(f"$.{key}: must be a non-empty string")
+
+    experience = content.get("experience")
+    if "experience" not in content:
+        problems.append("$.experience: missing")
+    elif not isinstance(experience, list) or not experience:
+        problems.append("$.experience: must be a non-empty list of roles")
+    else:
+        for i, role in enumerate(experience):
+            path = f"$.experience[{i}]"
+            if not isinstance(role, dict):
+                problems.append(f"{path}: must be an object")
+                continue
+            for key in ROLE_KEYS:
+                if key not in role:
+                    problems.append(f"{path}.{key}: missing")
+            # company may be "" (role line then starts with the title)
+            for key in ("company", "title", "dates", "location"):
+                if key in role and not isinstance(role[key], str):
+                    problems.append(f"{path}.{key}: must be a string")
+            for key in ("title", "dates"):
+                if isinstance(role.get(key), str) and not role[key].strip():
+                    problems.append(f"{path}.{key}: must not be empty")
+            bullets = role.get("bullets")
+            if "bullets" in role:
+                if not isinstance(bullets, list) or not bullets:
+                    problems.append(f"{path}.bullets: must be a non-empty list of strings")
+                else:
+                    for j, b in enumerate(bullets):
+                        if not isinstance(b, str) or not b.strip():
+                            problems.append(f"{path}.bullets[{j}]: must be a non-empty string")
+
+    skills = content.get("skills")
+    if "skills" not in content:
+        problems.append("$.skills: missing")
+    elif not isinstance(skills, list) or not skills:
+        problems.append("$.skills: must be a non-empty list of {header, items}")
+    else:
+        for i, skill in enumerate(skills):
+            path = f"$.skills[{i}]"
+            if not isinstance(skill, dict):
+                problems.append(f"{path}: must be an object with header and items")
+                continue
+            for key in ("header", "items"):
+                if not isinstance(skill.get(key), str) or not skill[key].strip():
+                    problems.append(f"{path}.{key}: missing or empty")
+
+    for key in content:
+        if key not in KNOWN_KEYS:
+            warnings.append(f"$.{key}: unknown top-level key, ignored "
+                            f"(expected: {', '.join(KNOWN_KEYS)})")
+
+    _find_em_dashes(content, "$", problems)
+    return problems, warnings
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -663,6 +753,16 @@ def main():
 
     with open(content_path, "r", encoding="utf-8") as f:
         content = json.load(f)
+
+    # Validate before touching the master or writing anything
+    problems, warnings = validate_content(content)
+    for w in warnings:
+        print(f"⚠ {w}")
+    if problems:
+        print(f"ERROR: {content_path} has {len(problems)} problem(s); nothing was written:")
+        for p in problems:
+            print(f"  - {p}")
+        sys.exit(1)
 
     master_path = _find_master()
     doc = Document(master_path)

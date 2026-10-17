@@ -93,6 +93,7 @@ Output files are named: `Your Name Resume MM.DD.YYYY Company Role.docx`
 | `generate_resume.py` | The script that converts a JSON content file into a formatted `.docx`. Auto-detects your master resume. |
 | `resume_instructions_template.md` | Template for your customization rules: role families, headline formulas, bullet priorities, role inclusion logic. |
 | `master_resume_bullets_template.md` | Template for your bullet bank: every role, organized by company, with verified metrics. |
+| `trace_check.py` | Fabrication check: every number in a content JSON (headline, summary, bullets, skills) must appear in `master_resume_bullets.md`. `python3 trace_check.py resume_content_[company].json`; exit 1 lists each untraceable figure. |
 | `requirements.txt` | Python dependencies: `pip install -r requirements.txt`. |
 | `README.md` | This file. |
 
