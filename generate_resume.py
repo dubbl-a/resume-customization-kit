@@ -65,6 +65,11 @@ RIGHT_TAB_POS = DEFAULT_RIGHT_TAB_POS
 # Paragraph styles the master must define
 REQUIRED_STYLES = ("Body A", "Section Title", "List Paragraph")
 
+# Bullet list numbering id. Read from the master's List Paragraph style when it
+# carries one (see bullet_num_id); otherwise numId 2, as in the original master.
+DEFAULT_BULLET_NUM_ID = "2"
+BULLET_NUM_ID = DEFAULT_BULLET_NUM_ID
+
 
 # ── Master resume lookup ──────────────────────────────────────────────────────
 
@@ -116,6 +121,7 @@ def preflight_master(doc, master_path):
       - Paragraph styles "Body A", "Section Title" and "List Paragraph"
       - A header table whose first cell has at least two paragraphs, where
         paragraph 1 holds the headline, a <w:br/> line break, then contact info
+      - A list definition for the bullet numId (see bullet_num_id)
     Lists every problem and exits 1 instead of failing mid-build.
     """
     problems = []
@@ -139,6 +145,23 @@ def preflight_master(doc, master_path):
             problems.append("header table's second paragraph has no line break (<w:br/>) "
                             "separating the headline from the contact line")
 
+    if "List Paragraph" in style_names:
+        num_id = bullet_num_id(doc)
+        try:
+            numbering = doc.part.numbering_part.element
+            defined = {n.get(qn('w:numId')) for n in numbering.findall(qn('w:num'))}
+        except NotImplementedError:   # master has no numbering.xml at all
+            defined = set()
+        if num_id not in defined:
+            problems.append(f"no bullet list definition with numId {num_id} "
+                            "(attach a bullet list to the List Paragraph style)")
+        else:
+            fmt = bullet_num_fmt(numbering, num_id)
+            if fmt is not None and fmt != "bullet":
+                print(f'⚠ Bullet list numId {num_id} uses numFmt "{fmt}", so bullets '
+                      "will render as a numbered list. Attach a bullet list to the "
+                      "List Paragraph style, or run build_master.py.")
+
     if problems:
         print("ERROR: Master resume is missing structure this script needs:")
         print(f"  {master_path}")
@@ -146,6 +169,34 @@ def preflight_master(doc, master_path):
             print(f"  - {p}")
         print("  See README.md (Add your master resume) for the required structure.")
         sys.exit(1)
+
+
+def bullet_num_fmt(numbering, num_id):
+    """numFmt of level 0 for the list numId points at, or None if it can't be resolved."""
+    num = next((n for n in numbering.findall(qn('w:num'))
+                if n.get(qn('w:numId')) == num_id), None)
+    if num is None:
+        return None
+    ref = num.find(qn('w:abstractNumId'))
+    if ref is None:
+        return None
+    for abstract in numbering.findall(qn('w:abstractNum')):
+        if abstract.get(qn('w:abstractNumId')) != ref.get(qn('w:val')):
+            continue
+        for lvl in abstract.findall(qn('w:lvl')):
+            if lvl.get(qn('w:ilvl')) == "0":
+                fmt = lvl.find(qn('w:numFmt'))
+                return fmt.get(qn('w:val')) if fmt is not None else None
+    return None
+
+
+def bullet_num_id(doc):
+    """numId attached to the List Paragraph style, or the default numId 2."""
+    numId = doc.styles["List Paragraph"].element.find(
+        f"{{{W}}}pPr/{{{W}}}numPr/{{{W}}}numId")
+    if numId is not None and numId.get(qn('w:val')):
+        return numId.get(qn('w:val'))
+    return DEFAULT_BULLET_NUM_ID
 
 
 def right_tab_pos(doc):
@@ -258,7 +309,7 @@ def add_para(doc_element, text, style_name, base_bold=False):
     Append a paragraph with style-specific handling:
 
     Section Title  — explicit sz=24, bold on all runs (style doesn't define size)
-    List Paragraph — injects <w:numPr> for bullet marker (numId=2)
+    List Paragraph — injects <w:numPr> for bullet marker (numId=BULLET_NUM_ID)
                      also splits on ' – ' or ' - ' (standalone dash/en-dash)
                      and inserts soft line breaks instead of connector dashes
     All others     — plain add_runs
@@ -274,7 +325,7 @@ def add_para(doc_element, text, style_name, base_bold=False):
         ilvl = OxmlElement('w:ilvl')
         ilvl.set(qn('w:val'), '0')
         numId = OxmlElement('w:numId')
-        numId.set(qn('w:val'), '2')
+        numId.set(qn('w:val'), BULLET_NUM_ID)
         numPr.append(ilvl)
         numPr.append(numId)
         pPr.insert(0, numPr)
@@ -768,9 +819,11 @@ def main():
     doc = Document(master_path)
     preflight_master(doc, master_path)
 
-    # Dates tab stop sits on the master's right margin
-    global RIGHT_TAB_POS
+    # Dates tab stop sits on the master's right margin; bullets use the
+    # master's own list definition
+    global RIGHT_TAB_POS, BULLET_NUM_ID
     RIGHT_TAB_POS = right_tab_pos(doc)
+    BULLET_NUM_ID = bullet_num_id(doc)
 
     # Kill auto-hyphenation inherited from MASTER settings
     disable_auto_hyphenation(doc)

@@ -35,7 +35,15 @@ brew install --cask libreoffice   # macOS; on Windows/Linux use the installer fr
 
 ### 2. Add your master resume `.docx`
 
-Place your existing resume `.docx` in this folder. The generator uses the first match of:
+**No master `.docx`?** Build a starter one that already has the required structure:
+
+```bash
+python3 build_master.py --name "Jane Smith" --contact "555-555-5555 • jane@example.com • City, ST" --links "linkedin.com/in/janesmith"
+```
+
+This writes `master_resume.docx` (Letter, 0.8" margins, Garamond 11pt). Every argument is optional; placeholders fill anything you leave out, and you can edit the text or styles in Word afterwards. It won't overwrite an existing `master_resume.docx` unless you pass `--force`.
+
+**Have your own?** Place your existing resume `.docx` in this folder. The generator uses the first match of:
 1. The `MASTER_RESUME` environment variable, set to the full path of your `.docx`
 2. `master_resume.docx` in this folder (simplest)
 3. Exactly one file with `MASTER` in its name (e.g., `Jane Smith MASTER Resume.docx`). If more than one matches, the script stops and lists them; Word lock files (`~$...`) are ignored.
@@ -93,6 +101,7 @@ Output files are named: `Your Name Resume MM.DD.YYYY Company Role.docx`
 | `generate_resume.py` | The script that converts a JSON content file into a formatted `.docx`. Auto-detects your master resume. |
 | `resume_instructions_template.md` | Template for your customization rules: role families, headline formulas, bullet priorities, role inclusion logic. |
 | `master_resume_bullets_template.md` | Template for your bullet bank: every role, organized by company, with verified metrics. |
+| `build_master.py` | Writes a starter `master_resume.docx` with the header table, styles and bullet list the generator needs. Use it if you don't have a master `.docx`. |
 | `trace_check.py` | Fabrication check: every number in a content JSON (headline, summary, bullets, skills) must appear in `master_resume_bullets.md`. `python3 trace_check.py resume_content_[company].json`; exit 1 lists each untraceable figure. |
 | `requirements.txt` | Python dependencies: `pip install -r requirements.txt`. |
 | `README.md` | This file. |
